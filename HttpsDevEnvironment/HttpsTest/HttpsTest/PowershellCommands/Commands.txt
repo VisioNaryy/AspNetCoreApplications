@@ -1,0 +1,11 @@
+﻿-- Certificates
+dotnet dev-certs https --trust
+
+$cert = New-SelfSignedCertificate -certstorelocation cert:\localmachine\my -dns weather.io
+$cert
+
+$pwd = ConvertTo-SecureString -String "pa55wOrd!" -Force -AsPlainText
+
+$certpath = "Cert:\localmachine\my\$($cert.Thumbprint)"
+
+Export-PfxCertificate -Cert $certpath -FilePath D:\Programming\Certificates\weather.pfx -Password $pwd

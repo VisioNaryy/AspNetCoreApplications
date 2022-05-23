@@ -1,0 +1,14 @@
+﻿docker build -t httpstestdockerimage .
+
+dotnet dev-certs https -ep $env:USERPROFILE\.aspnet\https\HttpsTestDocker.pfx -p pa55wOrd!
+
+dotnet dev-certs https --clean
+dotnet dev-certs https --trust
+
+dotnet user-secrets set "Kestrel:Certificates:Development:Password" "pa55wOrd!"
+
+docker run -d -p 8080:80 -p 8081:443 -e ASPNETCORE_URLS="https://+:443;http://+80" -e ASPNETCORE_HTTPS_PORT=8081 -e ASPNETCORE_ENVIRONMENT=Development -v $env:APPDATA\Microsoft\UserSecrets\:/root/.microsoft/usersecrets -v $env:USERPROFILE\.aspnet\https:/root/.aspnet/https/ -d --name httpstestdockercontainer -it httpstestdockerimage:latest
+
+or just
+
+docker-compose up --build
