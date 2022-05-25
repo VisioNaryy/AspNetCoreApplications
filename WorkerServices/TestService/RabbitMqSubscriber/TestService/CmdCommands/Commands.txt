@@ -1,0 +1,2 @@
+﻿sc create "TestService" binpath=... .exe
+sc start "TestService"
