@@ -1,0 +1,41 @@
+﻿@page "/Food/List"
+@inject IFoodData foodData
+@inject IOrderData orderData
+
+<h3>List</h3>
+
+@if (foodList.Any())
+{
+    <table class="table table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var foodItem in foodList)
+            {
+                <tr>
+                    <td>@foodItem.Title</td>
+                    <td>@foodItem.Description</td>
+                    <td>@string.Format("{0:C}", foodItem.Price)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <h4>Record is loading...</h4>
+}
+
+@code {
+    private List<Food> foodList;
+
+    protected override async Task OnInitializedAsync()
+    {
+        foodList = await foodData.GetFood();
+    }
+}

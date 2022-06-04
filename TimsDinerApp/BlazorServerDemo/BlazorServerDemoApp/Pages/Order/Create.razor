@@ -1,0 +1,70 @@
+﻿@page "/Order/Create"
+@inject IFoodData foodData
+@inject IOrderData orderData
+@inject NavigationManager navigationManager
+
+<h3>Create</h3>
+
+<EditForm Model="@order" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary Model="@order" />
+    <div class="form-group">
+        <label class="control-label">Item to Order</label>
+        @*<select @onchange="FoodItemChange" class="form-control">
+                <option value="">Select a meal...</option>
+                @foreach (var foodItem in foodItems)
+                {
+                    <option value="@foodItem.Id">@foodItem.Title</option>
+                }
+            </select>*@
+        <InputSelect @bind-Value="order.FoodId" class="form-control">
+            <option value="">Select a meal...</option>
+            @foreach (var foodItem in foodItems)
+            {
+                <option value="@foodItem.Id">@foodItem.Title</option>
+            }
+        </InputSelect>
+    </div>
+    <div class="form-group">
+        <label class="control-label">Quantity</label>
+        <InputNumber @bind-Value="order.Quantity" class="form-control"></InputNumber>
+        <ValidationMessage For="@(() => order.Quantity)" class="text-danger"></ValidationMessage>
+    </div>
+    <div class="form-group">
+        <label class="control-label">Order Name</label>
+        <InputText @bind-Value="order.OrderName" class="form-control"></InputText>
+        <ValidationMessage For="@(() => order.OrderName)" class="text-danger"></ValidationMessage>
+    </div>
+    <div class="form-group">
+        <input type="submit" value="Order Food" class="btn btn-primary" />
+    </div>
+</EditForm>
+
+@code {
+    private Order order = new Order();
+    private List<Food> foodItems = new List<Food>();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        foodItems = await foodData.GetFood();
+    }
+
+    //private void FoodItemChange(ChangeEventArgs e)
+    //{
+    //    if (string.IsNullOrEmpty(e.Value.ToString()))
+    //        order.FoodId = 0;
+    //    else
+    //        order.FoodId = int.Parse(e.Value.ToString());
+    //}
+
+    private async Task HandleValidSubmit()
+    {
+        var foodItemPrice = foodItems.Where(x => x.Id == order.FoodId).FirstOrDefault()?.Price;
+
+        order.Total = order.Quantity * (foodItemPrice ??= 0);
+
+        var id = await orderData.CreateOrder(order);
+
+        navigationManager.NavigateTo($"order/display/{id}");
+    }
+}

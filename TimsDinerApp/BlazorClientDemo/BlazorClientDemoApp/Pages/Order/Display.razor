@@ -1,0 +1,145 @@
+﻿@page "/Order/Display/{Id:int}"
+@inject HttpClient httpClient
+@inject NavigationManager navigationManager
+
+<h3>Display</h3>
+
+@if (!string.IsNullOrEmpty(errorString))
+{
+    <h4>System Error</h4>
+    <p>@errorString</p>
+}
+else if (orderResult.Order is null)
+{
+    <h4>Loading...</h4>
+}
+else
+{
+    <table class="table">
+        <tbody>
+            <tr>
+                <td><strong>OrderName</strong></td>
+                <td>@orderResult.Order.OrderName</td>
+            </tr>
+            <tr>
+                <td><strong>OrderDate</strong></td>
+                <td>@orderResult.Order.OrderDate</td>
+            </tr>
+            <tr>
+                <td><strong>Order Total</strong></td>
+                <td>@string.Format("{0:C}", orderResult.Order.Total)</td>
+            </tr>
+            <tr>
+                <td><strong>Order Purchased</strong></td>
+                <td>@orderResult.ItemPurchased</td>
+            </tr>
+            <tr>
+                <td><strong>Quantity</strong></td>
+                <td>@orderResult.Order.Quantity</td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    @if (confirmDelete)
+                    {
+                        <button class="btn btn-outline-danger" @onclick="HandleDeleteOrder">
+                            Confirm Delete
+                        </button>
+                        <button class="btn btn-secondary" @onclick="(() => confirmDelete = false)">
+                            Cancel
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-danger" @onclick="(() => confirmDelete = true)">
+                            Delete Order
+                        </button>
+                    }
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <EditForm Model="@orderToUpdate" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+        <ValidationSummary Model="@orderToUpdate"></ValidationSummary>
+
+        <div class="form-group">
+            <label class="control-label">Order Name</label>
+            <InputText @bind-Value="orderToUpdate.OrderName" class="form-control"></InputText>
+            <ValidationMessage For="@(() => orderToUpdate.OrderName)" class="text-danger"></ValidationMessage>
+        </div>
+
+        <div class="form-group">
+            <input type="submit" value="Update Order Name" class="btn btn-primary" />
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool confirmDelete = false;
+    private string errorString;
+    private OrderResult orderResult = new OrderResult();
+    private OrderToUpdate orderToUpdate = new OrderToUpdate();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var response = await httpClient.GetAsync($"api/order/get/{Id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                orderResult = await response.Content.ReadFromJsonAsync<OrderResult>();
+
+                orderToUpdate.Id = orderResult.Order.Id;
+                orderToUpdate.OrderName = orderResult.Order.OrderName;
+            }
+            else
+            {
+                errorString = response.ReasonPhrase;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorString = ex.Message;
+        }
+    }
+
+    private async Task HandleDeleteOrder()
+    {
+        try
+        {
+            var response = await httpClient.DeleteAsync($"api/order/delete/{Id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                navigationManager.NavigateTo($"food/list");
+            }
+            else
+            {
+                errorString = response.ReasonPhrase;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorString = ex.Message;
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            var response = await httpClient.PutAsJsonAsync("api/order/update", orderToUpdate);
+
+            orderResult.Order.OrderName = orderToUpdate.OrderName;
+        }
+        catch (Exception ex)
+        {
+            errorString = ex.Message;
+        }
+    }
+}
